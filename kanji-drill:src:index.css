@@ -1,0 +1,9 @@
+
+/* ここで全体センタリングを一括管理 */
+html, body, #root { height: 100%; }
+body { margin: 0; background: #f3f4f6; }
+#root {
+  min-height: 100dvh;   /* ここは高さだけでOK */
+  display: block;       /* grid にしなくてOK（任意） */
+  background: #f3f4f6;
+}
