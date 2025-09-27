@@ -1,9 +1,13 @@
-
-/* ここで全体センタリングを一括管理 */
+/* src/index.css */
 html, body, #root { height: 100%; }
-body { margin: 0; background: #f3f4f6; }
-#root {
-  min-height: 100dvh;   /* ここは高さだけでOK */
-  display: block;       /* grid にしなくてOK（任意） */
+body {
+  margin: 0;
   background: #f3f4f6;
+  min-height: 100svh;            /* 100dvhでもOK */
+  display: flex;                 /* ← 全体センター係（絶対効く） */
+  align-items: center;           /* 縦 */
+  justify-content: center;       /* 横 */
+}
+#root {
+  width: min(100%, 720px);       /* 画面が狭いとき100%、広いとき720px */
 }
