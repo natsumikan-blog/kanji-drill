@@ -3,5 +3,5 @@ import react from "@vitejs/plugin-react";
 
 export default defineConfig({
   plugins: [react()],
-  base: "/<リポジトリ名>/",   // 例: "/kanji-drill-10/"
+  base: "/kanji-drill/",   // ★リポ名に合わせる（末尾スラッシュ必須）
 });
