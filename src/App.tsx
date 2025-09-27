@@ -177,37 +177,76 @@ export default function App({ }: Props) {
   const [checked, setChecked] = useState<null | boolean>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
+  type KanjiItem = typeof KANJI_LIST[number];
+const [sourceList, setSourceList] = useState<KanjiItem[]>(KANJI_LIST);
+const lastListRef = useRef<KanjiItem[]>(KANJI_LIST);
+
+const handleImportCSV: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  const text = await f.text();
+
+  lastListRef.current = sourceList;
+  localStorage.setItem("kanji_list_backup", JSON.stringify(sourceList));
+
+  const parsed: KanjiItem[] = text
+    .trim()
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => {
+      const [k, y = ""] = line.split(",");
+      const yomi = y.includes("/") ? y.split("/").map((s) => s.trim()) : y.trim();
+      return { kanji: (k || "").trim(), yomi };
+    });
+
+  setSourceList(parsed);   // 全入れ替え
+  setIndex(0);
+  setChecked(null);
+  e.currentTarget.value = "";
+};
+
   // セット生成：seed/mode が変わったときにだけ作り直す
-  useEffect(() => {
-    const pool = [...KANJI_LIST].map((k) => ({
-      item: k,
-      id: `${k.kanji}|${toArray(k.yomi).join("/")}`,
-      w: weightMap.get(`${k.kanji}|${toArray(k.yomi).join("/")}`) ?? 1,
-    }));
-    const totalW = pool.reduce((s, p) => s + Math.max(0.1, p.w), 0);
-    const pick = (n: number) => {
-      const chosen: typeof pool = [];
-      for (let i = 0; i < n; i++) {
-        let r = Math.random() * totalW;
-        for (const p of pool) {
-          r -= Math.max(0.1, p.w);
-          if (r <= 0) {
-            chosen.push(p);
-            break;
-          }
+  // 1) 問題セット生成：history / sourceList / seed / mode が変わったら再生成
+useEffect(() => {
+  // ガード（空なら0問）
+  if (sourceList.length === 0) {
+    setQuestions([]);
+    return;
+  }
+
+  const pool = sourceList.map((k) => ({
+    item: k,
+    id: `${k.kanji}|${toArray(k.yomi).join("/")}`,
+    w: weightMap.get(`${k.kanji}|${toArray(k.yomi).join("/")}`) ?? 1,
+  }));
+
+  const totalW = pool.reduce((s, p) => s + Math.max(0.1, p.w), 0);
+
+  const pick = (n: number) => {
+    const chosen: typeof pool = [];
+    for (let i = 0; i < n; i++) {
+      let r = Math.random() * totalW;
+      for (const p of pool) {
+        r -= Math.max(0.1, p.w);
+        if (r <= 0) {
+          chosen.push(p);
+          break;
         }
       }
-      return chosen.map((c) => c.item);
-    };
-    setQuestions(shuffle(pick(QUESTIONS_PER_SET)));
+    }
+    return chosen.map((c) => c.item);
+  };
 
-    // セット開始時の初期化
-    setIndex(0);
-    setUser("");
-    setChecked(null);
-    inputRef.current?.focus();
-  }, [seed, mode]); // weightMap を入れても「セット開始時」だけの再生成なので OK
+  setQuestions(shuffle(pick(QUESTIONS_PER_SET)));
+}, [history, sourceList, seed, mode, weightMap]); // ← ) で閉じる！; は不要
 
+// 2) セット開始時の初期化：seed/mode 変更時のみ
+useEffect(() => {
+  setIndex(0);
+  setUser("");
+  setChecked(null);
+  inputRef.current?.focus();
+}, [seed, mode]);
   const current = questions[index];
 
   const correctAnswers = useMemo(() => {
@@ -341,6 +380,16 @@ export default function App({ }: Props) {
           >
             新しい10問
           </button>
+          {/* ▼ ここに追加：CSV読込（handleImportCSV を使う） ▼ */}
+      <label>
+        <input type="file" accept=".csv" onChange={handleImportCSV} hidden />
+        <span style={{ padding: "6px 12px", border: "1px solid #ccc", borderRadius: 8, cursor: "pointer" }}>
+          リスト読込（CSV）
+        </span>
+      </label>
+
+      <button onClick={() => setSourceList(lastListRef.current)}>1つ前に戻す</button>
+      <button onClick={() => setSourceList(KANJI_LIST)}>既定に戻す</button>
         </div>
       </div>
 
