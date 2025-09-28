@@ -139,7 +139,7 @@ type Props = {};
 // =====================================
 // コンポーネント本体
 // =====================================
-export default function App({}: Props) {
+export default function App({ }: Props) {
   const [mode, setMode] = useState<"read" | "write">("read");
   const [seed, setSeed] = useState(0); // リセット用
 
@@ -328,29 +328,32 @@ export default function App({}: Props) {
             display: "flex",
             justifyContent: "space-between",
             alignItems: "center",
-            gap: 8,
-            flexWrap: "wrap",
+            gap: 12,
+            flexWrap: "wrap", // 画面が狭い時だけ折り返す
           }}
         >
           {/* 左：モード + CSV + 復元 */}
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            <label style={{ fontSize: 12 }}>モード：</label>
-            <select
-              value={mode}
-              onChange={(e) => setMode(e.target.value as "read" | "write")}
-              style={{
-                border: "1px solid #e5e7eb",
-                borderRadius: 12,
-                height: 40,
-                padding: "0 12px",
-                background: "#fff",
-              }}
-            >
-              <option value="read">漢字 → よみ（ひらがな入力）</option>
-              <option value="write">よみ → 漢字（変換して確定）</option>
-            </select>
+            {/* ← モードは1行固定（2段にならない） */}
+            <div style={{ display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
+              <label style={{ fontSize: 12 }}>モード：</label>
+              <select
+                value={mode}
+                onChange={(e) => setMode(e.target.value as "read" | "write")}
+                style={{
+                  border: "1px solid #e5e7eb",
+                  borderRadius: 12,
+                  height: 40,
+                  padding: "0 12px",
+                  background: "#fff",
+                }}
+              >
+                <option value="read">漢字 → よみ（ひらがな入力）</option>
+                <option value="write">よみ → 漢字（変換して確定）</option>
+              </select>
+            </div>
 
-            {/* CSV読込（ボタン風） */}
+            {/* CSVボタンは文字を折り返さない */}
             <label
               style={{
                 display: "inline-flex",
@@ -363,23 +366,21 @@ export default function App({}: Props) {
                 border: "1px solid #e5e7eb",
                 boxShadow: "0 1px 2px rgba(0,0,0,.04)",
                 cursor: "pointer",
+                whiteSpace: "nowrap", // ★ これで二段化＆カッコ分離を防止
               }}
+              title="CSVファイルで漢字リストを差し替え"
             >
               <input type="file" accept=".csv" onChange={handleImportCSV} hidden />
-              リスト読込（CSV）
+              CSV読込
             </label>
 
             <button
               onClick={() => setSourceList(lastListRef.current)}
               style={{
-                height: 40,
-                padding: "0 14px",
-                borderRadius: 16,
-                background: "#f3f4f6",
-                color: "#111827",
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 1px 2px rgba(0,0,0,.04)",
-                cursor: "pointer",
+                height: 40, padding: "0 14px", borderRadius: 16,
+                background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb",
+                boxShadow: "0 1px 2px rgba(0,0,0,.04)", cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               1つ前に戻す
@@ -387,31 +388,29 @@ export default function App({}: Props) {
             <button
               onClick={() => setSourceList(KANJI_LIST)}
               style={{
-                height: 40,
-                padding: "0 14px",
-                borderRadius: 16,
-                background: "#f3f4f6",
-                color: "#111827",
-                border: "1px solid #e5e7eb",
-                boxShadow: "0 1px 2px rgba(0,0,0,.04)",
-                cursor: "pointer",
+                height: 40, padding: "0 14px", borderRadius: 16,
+                background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb",
+                boxShadow: "0 1px 2px rgba(0,0,0,.04)", cursor: "pointer",
+                whiteSpace: "nowrap",
               }}
             >
               既定に戻す
             </button>
           </div>
 
-          {/* 右：新しい10問 */}
+          {/* 右：新しい10問（高さを40に合わせると並びが綺麗） */}
           <button
             onClick={resetSet}
             style={{
               border: "none",
               borderRadius: 16,
-              padding: "10px 14px",
+              height: 40, // ★ 高さ統一
+              padding: "0 14px",
               background: "#111827",
               color: "#fff",
               boxShadow: "0 2px 8px rgba(0,0,0,.12)",
               cursor: "pointer",
+              whiteSpace: "nowrap",
             }}
           >
             新しい10問
