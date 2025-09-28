@@ -1,14 +1,14 @@
-name: Deploy Vite site to GitHub Pages
+name: Deploy Vite to GitHub Pages
 
 on:
   push:
-    branches: [main]
+    branches: [ main ]
   workflow_dispatch:
 
 permissions:
   contents: read
-  pages: write        # ← これが無いと 404 になりがち
-  id-token: write     # ← 同上（deploy-pages が必要）
+  pages: write
+  id-token: write
 
 concurrency:
   group: "pages"
@@ -22,12 +22,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
-      - run: npm ci           # npm 以外なら pnpm/yarn に変更
+          cache: "npm"
+      - run: npm ci
       - run: npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: ./dist        # Vite の出力
+          path: dist   # ← Viteの出力先
 
   deploy:
     needs: build
