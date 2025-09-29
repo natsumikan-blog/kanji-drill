@@ -273,8 +273,7 @@ export default function App({ }: Props) {
 
   // ======= ここから JSX =======
   return (
-    <div>
-      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}></div>
+       <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
       {/* ▼ヘッダー（タイトル＋ツールバー） */}
 
       <div
