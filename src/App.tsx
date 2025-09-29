@@ -105,11 +105,12 @@ const KANJI_LIST: { kanji: string; yomi: string | string[] }[] = [
 const QUESTIONS_PER_SET = 10;
 // —— 設定ここまで ——
 
-// ユーティリティ
-function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i = a.length - 1; i > 0; i++) {
-    const j = Math.floor(Math.random() * (i + 1));
+// 置き換え前の shuffle を削除して、これを入れる
+function shuffle<T>(arr: T[] | null | undefined): T[] {
+  if (!Array.isArray(arr)) return [];     // ガード
+  const a = arr.slice();                  // スプレッドより安全
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = (Math.random() * (i + 1)) | 0;
     [a[i], a[j]] = [a[j], a[i]];
   }
   return a;
@@ -156,19 +157,6 @@ export default function App({ }: Props) {
     localStorage.setItem(LS_KEY, JSON.stringify(history));
   }, [history]);
 
-  // 簡易レイティング（間違えが多いものを優先出題）
-  const weightMap = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const item of KANJI_LIST) {
-      const id = `${item.kanji}|${toArray(item.yomi).join("/")}`;
-      map.set(id, 1);
-    }
-    history.forEach((r) => {
-      map.set(r.id, (map.get(r.id) ?? 1) + (r.correct ? -0.2 : 0.8));
-    });
-    return map;
-  }, [history]);
-
   // CSV差し替え用のソース
   type KanjiItem = (typeof KANJI_LIST)[number];
   const [sourceList, setSourceList] = useState<KanjiItem[]>(KANJI_LIST);
@@ -205,34 +193,16 @@ export default function App({ }: Props) {
   const [checked, setChecked] = useState<null | boolean>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  // 1) 問題セット生成
+  // 1) 問題セット生成（シンプル版）
   useEffect(() => {
-    if (sourceList.length === 0) {
+    if (!Array.isArray(sourceList) || sourceList.length === 0) {
       setQuestions([]);
       return;
     }
-    const pool = sourceList.map((k) => ({
-      item: k,
-      id: `${k.kanji}|${toArray(k.yomi).join("/")}`,
-      w: weightMap.get(`${k.kanji}|${toArray(k.yomi).join("/")}`) ?? 1,
-    }));
-    const totalW = pool.reduce((s, p) => s + Math.max(0.1, p.w), 0);
-    const pick = (n: number) => {
-      const chosen: typeof pool = [];
-      for (let i = 0; i < n; i++) {
-        let r = Math.random() * totalW;
-        for (const p of pool) {
-          r -= Math.max(0.1, p.w);
-          if (r <= 0) {
-            chosen.push(p);
-            break;
-          }
-        }
-      }
-      return chosen.map((c) => c.item);
-    };
-    setQuestions(shuffle(pick(QUESTIONS_PER_SET)));
-  }, [history, sourceList, seed, mode, weightMap]);
+    const n = Math.min(QUESTIONS_PER_SET, sourceList.length);
+    const picked = shuffle(sourceList).slice(0, n); // 単純シャッフル
+    setQuestions(picked);
+  }, [sourceList, seed, mode]);  // ★ history / weightMap は一旦外す
 
   // 2) セット開始時の初期化
   useEffect(() => {
@@ -304,7 +274,9 @@ export default function App({ }: Props) {
   // ======= ここから JSX =======
   return (
     <div>
+      <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}></div>
       {/* ▼ヘッダー（タイトル＋ツールバー） */}
+
       <div
         style={{
           display: "flex",
