@@ -273,7 +273,6 @@ export default function App({ }: Props) {
 
   // ======= ここから JSX =======
   return (
-    <div>
        <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
       {/* ▼ヘッダー（タイトル＋ツールバー） */}
 
@@ -392,13 +391,16 @@ export default function App({ }: Props) {
 
       {/* ▼ 白カード（本体UI） */}
       <section
-        style={{
-          background: "#fff",
-          borderRadius: 16,
-          boxShadow: "0 6px 24px rgba(0,0,0,.08)",
-          padding: 24,
-        }}
-      >
+  style={{
+    background: "#fff",
+    borderRadius: 16,
+    boxShadow: "0 6px 24px rgba(0,0,0,.08)",
+    padding: 24,
+    maxWidth: 720,        // ★ カード幅を絞る
+    margin: "0 auto",     // ★ カードも中央寄せ
+    width: "100%",        // 画面が狭いときは100%
+  }}
+>
         {/* 進捗・スコア */}
         <div
           style={{
@@ -549,7 +551,6 @@ export default function App({ }: Props) {
           <p>編集方法：ファイル先頭の <code>KANJI_LIST</code> に漢字と読みを追加／学年ごとに配列を切り替えるのもおすすめ。</p>
         </div>
       </section>
-    </div>
     </div>
   );
 }
