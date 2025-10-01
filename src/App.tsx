@@ -273,6 +273,7 @@ export default function App({ }: Props) {
 
   // ======= ここから JSX =======
   return (
+    <div>
        <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
       {/* ▼ヘッダー（タイトル＋ツールバー） */}
 
@@ -548,6 +549,7 @@ export default function App({ }: Props) {
           <p>編集方法：ファイル先頭の <code>KANJI_LIST</code> に漢字と読みを追加／学年ごとに配列を切り替えるのもおすすめ。</p>
         </div>
       </section>
+    </div>
     </div>
   );
 }
