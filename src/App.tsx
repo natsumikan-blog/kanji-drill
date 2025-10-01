@@ -273,9 +273,11 @@ export default function App({ }: Props) {
 
   // ======= ここから JSX =======
   return (
-       <div style={{ maxWidth: 960, margin: "0 auto", padding: "24px 16px" }}>
+  // 外枠：横センター用（中身を真ん中に寄せる）
+  <div style={{ display: "flex", justifyContent: "center" }}>
+    {/* 内枠：幅を絞って中央に。outlineは一時デバッグ用 */}
+    <div style={{ width: "min(960px, 100%)", padding: "24px 16px", outline: "1px dashed #aaa" }}>
       {/* ▼ヘッダー（タイトル＋ツールバー） */}
-
       <div
         style={{
           display: "flex",
@@ -285,6 +287,7 @@ export default function App({ }: Props) {
           marginBottom: 24,
         }}
       >
+        {/* ...タイトル/ツールバーは今のまま... */}
         {/* タイトル */}
         <div style={{ textAlign: "left" }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>漢字ドリル10</h1>
@@ -390,15 +393,15 @@ export default function App({ }: Props) {
       </div>
 
       {/* ▼ 白カード（本体UI） */}
-      <section
+     <section
   style={{
     background: "#fff",
     borderRadius: 16,
     boxShadow: "0 6px 24px rgba(0,0,0,.08)",
     padding: 24,
-    maxWidth: 720,        // ★ カード幅を絞る
-    margin: "0 auto",     // ★ カードも中央寄せ
-    width: "100%",        // 画面が狭いときは100%
+    width: "100%",
+    maxWidth: 720,      // カード自体も適度に細く
+    margin: "0 auto",   // カード中央
   }}
 >
         {/* 進捗・スコア */}
@@ -551,6 +554,7 @@ export default function App({ }: Props) {
           <p>編集方法：ファイル先頭の <code>KANJI_LIST</code> に漢字と読みを追加／学年ごとに配列を切り替えるのもおすすめ。</p>
         </div>
       </section>
+    </div>
     </div>
   );
 }
