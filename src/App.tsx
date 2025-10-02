@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 
-// —— 設定ここから ——
-// 出題リスト
+
 const KANJI_LIST: { kanji: string; yomi: string | string[] }[] = [
   { kanji: "学校", yomi: "がっこう" },
   { kanji: "一日", yomi: "ついたち" },
@@ -103,9 +102,7 @@ const KANJI_LIST: { kanji: string; yomi: string | string[] }[] = [
   { kanji: "庭", yomi: "にわ" },
 ];
 const QUESTIONS_PER_SET = 10;
-// —— 設定ここまで ——
 
-// 置き換え前の shuffle を削除して、これを入れる
 function shuffle<T>(arr: T[] | null | undefined): T[] {
   if (!Array.isArray(arr)) return [];     // ガード
   const a = arr.slice();                  // スプレッドより安全
@@ -125,7 +122,7 @@ function normalizeHiragana(s: string) {
     .replace(/[\u30a1-\u30f6]/g, (m) => String.fromCharCode(m.charCodeAt(0) - 0x60)); // カタカナ→ひらがな
 }
 
-// ローカルストレージキー
+// ローカルストレージキー 
 const LS_KEY = "kanji-drill-history-v1";
 
 type Result = {
@@ -137,158 +134,139 @@ type Result = {
 
 type Props = {};
 
-// =====================================
-// コンポーネント本体
-// =====================================
-export default function App({ }: Props) {
-  const [mode, setMode] = useState<"read" | "write">("read");
-  const [seed, setSeed] = useState(0); // リセット用
 
-  // 履歴
-  const [history, setHistory] = useState<Result[]>(() => {
-    try {
-      const raw = localStorage.getItem(LS_KEY);
-      return raw ? (JSON.parse(raw) as Result[]) : [];
-    } catch {
-      return [];
-    }
-  });
-  useEffect(() => {
-    localStorage.setItem(LS_KEY, JSON.stringify(history));
-  }, [history]);
+export default function App() {
+  const [mode, setMode] = useState<"read" | "write" > ("read");
+const [seed, setSeed] = useState(0);
 
-  // CSV差し替え用のソース
-  type KanjiItem = (typeof KANJI_LIST)[number];
-  const [sourceList, setSourceList] = useState<KanjiItem[]>(KANJI_LIST);
-  const lastListRef = useRef<KanjiItem[]>(KANJI_LIST);
+// 履歴
+const [history, setHistory] = useState<Result[]>(() => {
+  try {
+    const raw = localStorage.getItem(LS_KEY);
+    return raw ? (JSON.parse(raw) as Result[]) : [];
+  } catch {
+    return [];
+  }
+});
+useEffect(() => {
+  localStorage.setItem(LS_KEY, JSON.stringify(history));
+}, [history]);
 
-  const handleImportCSV: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const text = await f.text();
+// CSV 差し替え用
+type KanjiItem = (typeof KANJI_LIST)[number];
+const [sourceList, setSourceList] = useState<KanjiItem[]>(KANJI_LIST);
+const lastListRef = useRef<KanjiItem[]>(KANJI_LIST);
 
-    lastListRef.current = sourceList;
-    localStorage.setItem("kanji_list_backup", JSON.stringify(sourceList));
+const handleImportCSV: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+  const f = e.target.files?.[0];
+  if (!f) return;
+  const text = await f.text();
 
-    const parsed: KanjiItem[] = text
-      .trim()
-      .split(/\r?\n/)
-      .filter(Boolean)
-      .map((line) => {
-        const [k, y = ""] = line.split(",");
-        const yomi = y.includes("/") ? y.split("/").map((s) => s.trim()) : y.trim();
-        return { kanji: (k || "").trim(), yomi };
-      });
+  lastListRef.current = sourceList;
+  localStorage.setItem("kanji_list_backup", JSON.stringify(sourceList));
 
-    setSourceList(parsed); // 全入れ替え
-    setIndex(0);
-    setChecked(null);
-    e.currentTarget.value = "";
-  };
+  const parsed: KanjiItem[] = text
+    .trim()
+    .split(/\r?\n/)
+    .filter(Boolean)
+    .map((line) => {
+      const [k, y = ""] = line.split(",");
+      const yomi = y.includes("/") ? y.split("/").map((s) => s.trim()) : y.trim();
+      return { kanji: (k || "").trim(), yomi };
+    });
 
-  // 問題リスト（このセット分）
-  const [questions, setQuestions] = useState<typeof KANJI_LIST>([]);
-  const [index, setIndex] = useState(0);
-  const [user, setUser] = useState("");
-  const [checked, setChecked] = useState<null | boolean>(null);
-  const inputRef = useRef<HTMLInputElement>(null);
+  setSourceList(parsed);
+  setIndex(0);
+  setChecked(null);
+  e.currentTarget.value = "";
+};
 
-  // 1) 問題セット生成（シンプル版）
-  useEffect(() => {
-    if (!Array.isArray(sourceList) || sourceList.length === 0) {
-      setQuestions([]);
-      return;
-    }
-    const n = Math.min(QUESTIONS_PER_SET, sourceList.length);
-    const picked = shuffle(sourceList).slice(0, n); // 単純シャッフル
-    setQuestions(picked);
-  }, [sourceList, seed, mode]);  // ★ history / weightMap は一旦外す
+// 出題状態 
+const [questions, setQuestions] = useState<typeof KANJI_LIST>([]);
+const [index, setIndex] = useState(0);
+const [user, setUser] = useState("");
+const [checked, setChecked] = useState<null | boolean>(null);
+const inputRef = useRef<HTMLInputElement>(null);
 
-  // 2) セット開始時の初期化
-  useEffect(() => {
-    setIndex(0);
+// セット生成（シンプル版）
+useEffect(() => {
+  if (!Array.isArray(sourceList) || sourceList.length === 0) {
+    setQuestions([]);
+    return;
+  }
+  const n = Math.min(QUESTIONS_PER_SET, sourceList.length);
+  const picked = shuffle(sourceList).slice(0, n);
+  setQuestions(picked);
+}, [sourceList, seed, mode]);
+
+// セット開始時の初期化 
+useEffect(() => {
+  setIndex(0);
+  setUser("");
+  setChecked(null);
+  inputRef.current?.focus();
+}, [seed, mode]);
+
+const current = questions[index];
+
+const correctAnswers = useMemo(() => {
+  if (mode === "read") {
+    return toArray(current?.yomi || []).map((y) => normalizeHiragana(y));
+  }
+  return [current?.kanji ?? ""];
+}, [current, mode]);
+
+function check() {
+  if (!current) return;
+  const ok =
+    mode === "read"
+      ? correctAnswers.includes(normalizeHiragana(user))
+      : user.trim() === current.kanji;
+
+  setChecked(ok);
+
+  const id = `${current.kanji}|${toArray(current.yomi).join("/")}`;
+  setHistory((h) => [...h, { id, correct: ok, timestamp: Date.now(), mode }]);
+
+  if (ok) {
+    setTimeout(() => {
+      if (index < questions.length - 1) {
+        setIndex((i) => i + 1);
+        setUser("");
+        setChecked(null);
+        inputRef.current?.focus();
+      }
+    }, 600);
+  }
+}
+
+function next() {
+  if (index < questions.length - 1) {
+    setIndex(index + 1);
     setUser("");
     setChecked(null);
     inputRef.current?.focus();
-  }, [seed, mode]);
-
-  const current = questions[index];
-
-  const correctAnswers = useMemo(() => {
-    if (mode === "read") {
-      return toArray(current?.yomi || []).map((y) => normalizeHiragana(y));
-    }
-    return [current?.kanji ?? ""];
-  }, [current, mode]);
-
-  // —— 判定
-  function check() {
-    if (!current) return;
-    let ok = false;
-    if (mode === "read") {
-      ok = correctAnswers.includes(normalizeHiragana(user));
-    } else {
-      ok = user.trim() === current.kanji;
-    }
-    setChecked(ok);
-
-    const id = `${current.kanji}|${toArray(current.yomi).join("/")}`;
-    setHistory((h) => [...h, { id, correct: ok, timestamp: Date.now(), mode }]);
-
-    if (ok) {
-      setTimeout(() => {
-        if (index < questions.length - 1) {
-          setIndex((i) => i + 1);
-          setUser("");
-          setChecked(null);
-          inputRef.current?.focus();
-        }
-      }, 600);
-    }
   }
+}
 
-  // —— 次の問題へ
-  function next() {
-    if (index < questions.length - 1) {
-      setIndex(index + 1);
-      setUser("");
-      setChecked(null);
-      inputRef.current?.focus();
-    }
-  }
+function resetSet() {
+  setSeed((s) => s + 1);
+}
 
-  // —— 新しい10問
-  function resetSet() {
-    setSeed((s) => s + 1);
-  }
+const score = useMemo(() => {
+  const ids = new Set(questions.map((q) => `${q.kanji}|${toArray(q.yomi).join("/")}`));
+  const recent = history.filter((r) => ids.has(r.id)).slice(-100);
+  const correct = recent.filter((r) => r.correct).length;
+  const total = recent.length || 1;
+  return Math.round((correct / total) * 100);
+}, [questions, history]);
 
-  // —— 直近スコア
-  const score = useMemo(() => {
-    const ids = new Set(questions.map((q) => `${q.kanji}|${toArray(q.yomi).join("/")}`));
-    const recent = history.filter((r) => ids.has(r.id)).slice(-100);
-    const correct = recent.filter((r) => r.correct).length;
-    const total = recent.length || 1;
-    return Math.round((correct / total) * 100);
-  }, [questions, history]);
 
-  // ======= ここから JSX =======
-  return (
-  // 外枠：横センター用（中身を真ん中に寄せる）
-  <div style={{ display: "flex", justifyContent: "center" }}>
-    {/* 内枠：幅を絞って中央に。outlineは一時デバッグ用 */}
-    <div style={{ width: "min(960px, 100%)", padding: "24px 16px", outline: "1px dashed #aaa" }}>
-      {/* ▼ヘッダー（タイトル＋ツールバー） */}
-      <div
-        style={{
-          display: "flex",
-          gap: 16,
-          flexDirection: "column",
-          alignItems: "stretch",
-          marginBottom: 24,
-        }}
-      >
-        {/* ...タイトル/ツールバーは今のまま... */}
-        {/* タイトル */}
+return (
+  <div style={{ width: "100%", display: "flex", justifyContent: "center" }}>
+    <div style={{ width: "min(960px, 100%)", padding: "24px 16px", boxSizing: "border-box" }}>
+      {/* ヘッダー */}
+      <div style={{ display: "flex", gap: 16, flexDirection: "column", alignItems: "stretch", marginBottom: 24 }}>
         <div style={{ textAlign: "left" }}>
           <h1 style={{ fontSize: 28, fontWeight: 700, margin: 0 }}>漢字ドリル10</h1>
           <p style={{ fontSize: 12, color: "#6b7280", margin: "6px 0 0" }}>
@@ -296,38 +274,21 @@ export default function App({ }: Props) {
           </p>
         </div>
 
-        {/* ▼ ツールバー */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            gap: 12,
-            flexWrap: "wrap", // 画面が狭い時だけ折り返す
-          }}
-        >
-          {/* 左：モード + CSV + 復元 */}
+        {/* ツールバー */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
-            {/* ← モードは1行固定（2段にならない） */}
             <div style={{ display: "flex", alignItems: "center", gap: 8, whiteSpace: "nowrap" }}>
               <label style={{ fontSize: 12 }}>モード：</label>
               <select
                 value={mode}
                 onChange={(e) => setMode(e.target.value as "read" | "write")}
-                style={{
-                  border: "1px solid #e5e7eb",
-                  borderRadius: 12,
-                  height: 40,
-                  padding: "0 12px",
-                  background: "#fff",
-                }}
+                style={{ border: "1px solid #e5e7eb", borderRadius: 12, height: 40, padding: "0 12px", background: "#fff" }}
               >
                 <option value="read">漢字 → よみ（ひらがな入力）</option>
                 <option value="write">よみ → 漢字（変換して確定）</option>
               </select>
             </div>
 
-            {/* CSVボタンは文字を折り返さない */}
             <label
               style={{
                 display: "inline-flex",
@@ -340,7 +301,7 @@ export default function App({ }: Props) {
                 border: "1px solid #e5e7eb",
                 boxShadow: "0 1px 2px rgba(0,0,0,.04)",
                 cursor: "pointer",
-                whiteSpace: "nowrap", // ★ これで二段化＆カッコ分離を防止
+                whiteSpace: "nowrap",
               }}
               title="CSVファイルで漢字リストを差し替え"
             >
@@ -350,111 +311,60 @@ export default function App({ }: Props) {
 
             <button
               onClick={() => setSourceList(lastListRef.current)}
-              style={{
-                height: 40, padding: "0 14px", borderRadius: 16,
-                background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb",
-                boxShadow: "0 1px 2px rgba(0,0,0,.04)", cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
+              style={{ height: 40, padding: "0 14px", borderRadius: 16, background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb", boxShadow: "0 1px 2px rgba(0,0,0,.04)", cursor: "pointer", whiteSpace: "nowrap" }}
             >
               1つ前に戻す
             </button>
             <button
               onClick={() => setSourceList(KANJI_LIST)}
-              style={{
-                height: 40, padding: "0 14px", borderRadius: 16,
-                background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb",
-                boxShadow: "0 1px 2px rgba(0,0,0,.04)", cursor: "pointer",
-                whiteSpace: "nowrap",
-              }}
+              style={{ height: 40, padding: "0 14px", borderRadius: 16, background: "#f3f4f6", color: "#111827", border: "1px solid #e5e7eb", boxShadow: "0 1px 2px rgba(0,0,0,.04)", cursor: "pointer", whiteSpace: "nowrap" }}
             >
               既定に戻す
             </button>
           </div>
 
-          {/* 右：新しい10問（高さを40に合わせると並びが綺麗） */}
           <button
             onClick={resetSet}
-            style={{
-              border: "none",
-              borderRadius: 16,
-              height: 40, // ★ 高さ統一
-              padding: "0 14px",
-              background: "#111827",
-              color: "#fff",
-              boxShadow: "0 2px 8px rgba(0,0,0,.12)",
-              cursor: "pointer",
-              whiteSpace: "nowrap",
-            }}
+            style={{ border: "none", borderRadius: 16, height: 40, padding: "0 14px", background: "#111827", color: "#fff", boxShadow: "0 2px 8px rgba(0,0,0,.12)", cursor: "pointer", whiteSpace: "nowrap" }}
           >
             新しい10問
           </button>
         </div>
       </div>
 
-      {/* ▼ 白カード（本体UI） */}
-     <section
-  style={{
-    background: "#fff",
-    borderRadius: 16,
-    boxShadow: "0 6px 24px rgba(0,0,0,.08)",
-    padding: 24,
-    width: "100%",
-    maxWidth: 720,      // カード自体も適度に細く
-    margin: "0 auto",   // カード中央
-  }}
->
-        {/* 進捗・スコア */}
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            marginBottom: 16,
-            fontSize: 14,
-            color: "#6b7280",
-          }}
-        >
-          <div>
-            {index + 1} / {questions.length} 問
-          </div>
-          <div>
-            直近スコア：<span style={{ fontWeight: 600, color: "#111827" }}>{score}%</span>
-          </div>
+      {/* 本体カード */}
+      <section
+        style={{
+          background: "#fff",
+          borderRadius: 16,
+          boxShadow: "0 6px 24px rgba(0,0,0,.08)",
+          padding: 24,
+          width: "100%",
+          maxWidth: 720,
+          margin: "0 auto",
+          boxSizing: "border-box",
+        }}
+      >
+        <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 16, fontSize: 14, color: "#6b7280" }}>
+          <div>{index + 1} / {questions.length} 問</div>
+          <div>直近スコア：<span style={{ fontWeight: 600, color: "#111827" }}>{score}%</span></div>
         </div>
 
-        {/* 履歴リセット */}
         <button
-          onClick={() => {
-            localStorage.clear();
-            window.location.reload();
-          }}
-          style={{
-            marginTop: 8,
-            marginBottom: 8,
-            padding: "8px 12px",
-            background: "#f3f4f6",
-            border: "1px solid #e5e7eb",
-            borderRadius: 8,
-            cursor: "pointer",
-          }}
+          onClick={() => { localStorage.clear(); window.location.reload(); }}
+          style={{ marginTop: 8, marginBottom: 8, padding: "8px 12px", background: "#f3f4f6", border: "1px solid #e5e7eb", borderRadius: 8, cursor: "pointer" }}
         >
           リセット
         </button>
 
-        {/* 出題エリア */}
         {current && (
           <>
             <div style={{ textAlign: "center", margin: "24px 0" }}>
-              {mode === "read" ? (
-                <div style={{ fontSize: 48, fontWeight: 700, letterSpacing: 2 }}>{current.kanji}</div>
-              ) : (
-                <div style={{ fontSize: 22, color: "#374151" }}>
-                  「{toArray(current.yomi).join(" / ")}」を書いてね
-                </div>
-              )}
+              {mode === "read"
+                ? <div style={{ fontSize: 48, fontWeight: 700, letterSpacing: 2 }}>{current.kanji}</div>
+                : <div style={{ fontSize: 22, color: "#374151" }}>「{toArray(current.yomi).join(" / ")}」を書いてね</div>}
             </div>
 
-            {/* 入力・操作 */}
             <div style={{ display: "flex", gap: 8 }}>
               <input
                 ref={inputRef}
@@ -479,52 +389,20 @@ export default function App({ }: Props) {
               />
 
               {checked === null ? (
-                <button
-                  onClick={check}
-                  style={{
-                    border: "none",
-                    borderRadius: 16,
-                    padding: "12px 16px",
-                    background: "#111827",
-                    color: "#fff",
-                    cursor: "pointer",
-                    boxShadow: "0 2px 8px rgba(0,0,0,.1)",
-                  }}
-                >
+                <button onClick={check} style={{ border: "none", borderRadius: 16, padding: "12px 16px", background: "#111827", color: "#fff", cursor: "pointer", boxShadow: "0 2px 8px rgba(0,0,0,.1)" }}>
                   判定
                 </button>
               ) : index < questions.length - 1 ? (
-                <button
-                  onClick={next}
-                  style={{
-                    border: "none",
-                    borderRadius: 16,
-                    padding: "12px 16px",
-                    background: "#1f2937",
-                    color: "#fff",
-                    cursor: "pointer",
-                  }}
-                >
+                <button onClick={next} style={{ border: "none", borderRadius: 16, padding: "12px 16px", background: "#1f2937", color: "#fff", cursor: "pointer" }}>
                   次へ
                 </button>
               ) : (
-                <button
-                  onClick={resetSet}
-                  style={{
-                    border: "none",
-                    borderRadius: 16,
-                    padding: "12px 16px",
-                    background: "#4f46e5",
-                    color: "#fff",
-                    cursor: "pointer",
-                  }}
-                >
+                <button onClick={resetSet} style={{ border: "none", borderRadius: 16, padding: "12px 16px", background: "#4f46e5", color: "#fff", cursor: "pointer" }}>
                   もう一度（新しい10問）
                 </button>
               )}
             </div>
 
-            {/* 判定結果 */}
             {checked !== null && (
               <div style={{ marginTop: 12, fontSize: 14 }}>
                 {checked ? (
@@ -532,15 +410,9 @@ export default function App({ }: Props) {
                 ) : (
                   <div style={{ color: "#b91c1c" }}>
                     × 不正解。正解：
-                    {mode === "read" ? (
-                      <span style={{ fontWeight: 600 }}>
-                        {toArray(current.yomi).join(" / ")}（{current.kanji}）
-                      </span>
-                    ) : (
-                      <span style={{ fontWeight: 600 }}>
-                        {current.kanji}（{toArray(current.yomi).join(" / ")}）
-                      </span>
-                    )}
+                    {mode === "read"
+                      ? <span style={{ fontWeight: 600 }}>{toArray(current.yomi).join(" / ")}（{current.kanji}）</span>
+                      : <span style={{ fontWeight: 600 }}>{current.kanji}（{toArray(current.yomi).join(" / ")}）</span>}
                   </div>
                 )}
               </div>
@@ -548,13 +420,12 @@ export default function App({ }: Props) {
           </>
         )}
 
-        {/* フッター文言 */}
         <div style={{ marginTop: 24, fontSize: 12, color: "#6b7280", textAlign: "left" }}>
           <p>使い方：モードを選んで10問に回答。Enterキーで判定/次へ。問題は間違えたものが出やすくなります。</p>
           <p>編集方法：ファイル先頭の <code>KANJI_LIST</code> に漢字と読みを追加／学年ごとに配列を切り替えるのもおすすめ。</p>
         </div>
       </section>
     </div>
-    </div>
-  );
+  </div>
+);
 }
