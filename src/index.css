@@ -66,3 +66,6 @@ button:focus-visible {
     background-color: #f9f9f9;
   }
 }
+/* force center, regardless of inline styles */
+#root { display: flex; justify-content: center; }
+#root > * { width: min(960px, 100%); }
