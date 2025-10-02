@@ -132,9 +132,6 @@ type Result = {
   mode: "read" | "write";
 };
 
-type Props = {};
-
-
 export default function App() {
   const [mode, setMode] = useState<"read" | "write" > ("read");
 const [seed, setSeed] = useState(0);
